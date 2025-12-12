@@ -28,13 +28,8 @@ trigger AccountTrigger on Account  (before insert, after insert)  {
     * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.
     * Trigger should only fire on insert.
     */
-    if (Trigger.isBefore && Trigger.isInsert) {
-        for (Account acc : Trigger.new) {
-            if (acc.Type == null) {
-                acc.Type = 'Prospect';
-            }
-        }
-    }
+
+   // if (Trigger.isBefore && Trigger.isInsert) { }
 
     /*
     * Account Trigger

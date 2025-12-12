@@ -28,15 +28,29 @@ Always ensure that your helper methods are bulk-safe to handle multiple records 
 */
 public with sharing class AccountHelper extends TriggerHandler {
     
-    public override void beforeInsert() {
-        // Implement logic to be executed before inserting Account records
+
+        /*
+    * Account Trigger
+    * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.
+    * Trigger should only fire on insert.
+    */
+
+    public void setTypeProspect(List<SObject> objects){
+
+        Schema.SObjectType objType = objects.getSObjectType();
+        if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
+            List<Account> accounts = (List<Account>)objects; // Cast the whole list
+
+        for (Account acc : accounts) {
+      
+                if (acc.Type == null) {
+                acc.Type = 'Prospect';
+                }   
+            }    
+        }
     }
 
-    public void setTypeProspect(SObject objects){
-
-    }
-
-    void addressCopy(){
+    public void addressCopy(){
 
     }
 
@@ -47,4 +61,13 @@ public with sharing class AccountHelper extends TriggerHandler {
     //[public | private ] [static] data_type defaultContact (input parameters) {
     //  The body of the method
     //}
+
+    public override void beforeInsert() {
+        // Implement logic to be executed before inserting Account records
+        setTypeProspect(Trigger.new);
+    }
+    public override void afterInsert() {
+        // Implement logic to be executed after inserting Account records
+    }
+
 }
