@@ -1,5 +1,5 @@
 /*
-AccountHelper Overview
+OpportunityHelper Overview
 
 The `AccountHelper` class is designed to provide helper methods that assist in performing specific operations on Account records. 
 This class is intended to modularize the logic used in the `AccountTrigger` to ensure separation of concerns, improve readability, and ease maintenance. 
@@ -26,7 +26,7 @@ Methods:
 Remember:
 Always ensure that your helper methods are bulk-safe to handle multiple records efficiently. 
 */
-public with sharing class AccountHelper {
+public with sharing class OpportunityHelper {
     
     public void setTypeProspect(SObject objects){
 

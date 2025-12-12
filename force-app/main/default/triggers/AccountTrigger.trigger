@@ -17,7 +17,11 @@ For this lesson, students have two options:
 
 Let's dive into the specifics of each operation:
 */
-trigger AccountTrigger on Account (before insert, after insert) {
+trigger AccountTrigger on Account  (before insert, after insert) extends TriggerHandler {
+
+    // Create an instance of the handler class to manage the logic
+    TriggerHandler acctHandler = new TriggerHandler();
+
 
     /*
     * Account Trigger

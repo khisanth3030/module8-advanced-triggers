@@ -26,7 +26,7 @@ Methods:
 Remember:
 Always ensure that your helper methods are bulk-safe to handle multiple records efficiently. 
 */
-public with sharing class AccountHelper {
+public with sharing class AccountHelper extends TriggerHandler {
     
     public void setTypeProspect(SObject objects){
 
