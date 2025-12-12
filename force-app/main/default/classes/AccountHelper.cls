@@ -29,30 +29,46 @@ Always ensure that your helper methods are bulk-safe to handle multiple records 
 public with sharing class AccountHelper extends TriggerHandler {
     
 
-        /*
-    * Account Trigger
+    /*
+    * setTypeProspect
     * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.
     * Trigger should only fire on insert.
     */
-
     public void setTypeProspect(List<SObject> objects){
 
         Schema.SObjectType objType = objects.getSObjectType();
         if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
             List<Account> accounts = (List<Account>)objects; // Cast the whole list
-
-        for (Account acc : accounts) {
-      
-                if (acc.Type == null) {
-                acc.Type = 'Prospect';
-                }   
+        
+            for (Account acc : accounts) {   
+                    if (acc.Type == null) {acc.Type = 'Prospect';}   
             }    
         }
     }
+ 
+    /*
+    * addressCopy
+    * When an account is inserted copy the shipping address to the billing address.
+    * Trigger should only fire on insert.
+    */
+    public void addressCopy(List<SObject> objects){
 
-    public void addressCopy(){
+        Schema.SObjectType objType = objects.getSObjectType();
+        if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
+            List<Account> accounts = (List<Account>)objects; // Cast the whole list
+    
 
+            for (Account acc : accounts) {
+                if (acc.ShippingStreet != null) {acc.BillingStreet = acc.ShippingStreet;}
+                if (acc.ShippingCity != null) {acc.BillingCity = acc.ShippingCity;}
+                if (acc.ShippingState != null) {acc.BillingState = acc.ShippingState;}
+                if (acc.ShippingPostalCode != null) {acc.BillingPostalCode = acc.ShippingPostalCode;}
+                if (acc.ShippingCountry != null) {acc.BillingCountry = acc.ShippingCountry;}
+            }               
+        }    
     }
+
+    
 
     //[public | private ] [static] data_type setRating (input parameters) {
     //  The body of the method
