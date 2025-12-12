@@ -28,6 +28,10 @@ Always ensure that your helper methods are bulk-safe to handle multiple records 
 */
 public with sharing class AccountHelper extends TriggerHandler {
     
+    public override void beforeInsert() {
+        // Implement logic to be executed before inserting Account records
+    }
+
     public void setTypeProspect(SObject objects){
 
     }
