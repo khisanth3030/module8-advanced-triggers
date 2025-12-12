@@ -69,21 +69,58 @@ public with sharing class AccountHelper extends TriggerHandler {
     }
 
     
+    /*
+    * setRating
+    * When an account is inserted set the rating to 'Hot' if the Phone, Website, and Fax is not empty.
+    * Trigger should only fire on insert.
+    */
+    public void setRating(List<SObject> objects){
 
-    //[public | private ] [static] data_type setRating (input parameters) {
-    //  The body of the method
-    //}
+        Schema.SObjectType objType = objects.getSObjectType();
+        if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
+            List<Account> accounts = (List<Account>)objects; // Cast the whole list
+        
+            for (Account acc : accounts) {   
+                    if (acc.Phone != null && acc.Website != null && acc.Fax != null) {
+                        acc.Rating = 'Hot';
+                    }   
+            }    
+        }
+    }
+ 
+    /*
+    * createDefaultContact
+    * When an account is inserted create a contact related to the account with the following default values:
+    * LastName = 'DefaultContact'
+    * Email = 'default@email.com'
+    * Trigger should only fire on insert.
+    */    
+    public void createDefaultContact(List<SObject> objects){
 
-    //[public | private ] [static] data_type defaultContact (input parameters) {
-    //  The body of the method
-    //}
+        Schema.SObjectType objType = objects.getSObjectType();
+        if (objType == Schema.Account.SObjectType) {  
+            List<Account> accounts = (List<Account>)objects; // Cast the whole list
+            List<Contact> contacts = new List<Contact>();   
+            for(Account acc : accounts){
+                Contact con = new Contact();
+                con.LastName = 'DefaultContact';
+                con.Email = 'default@email.com';
+                con.AccountId = acc.Id;
+                contacts.add(con);
+            }
+            insert contacts; 
+        }
+        
+        }
 
     public override void beforeInsert() {
         // Implement logic to be executed before inserting Account records
         setTypeProspect(Trigger.new);
+        addressCopy(Trigger.new);
+        setRating(Trigger.new);
     }
     public override void afterInsert() {
-        // Implement logic to be executed after inserting Account records
+        createDefaultContact(Trigger.new);
     }
 
 }
