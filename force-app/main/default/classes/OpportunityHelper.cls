@@ -26,15 +26,8 @@ Methods:
 Remember:
 Always ensure that your helper methods are bulk-safe to handle multiple records efficiently. 
 */
-public with sharing class OpportunityHelper {
+public with sharing class OpportunityHelper extends TriggerHandler {
     
-    public void setTypeProspect(SObject objects){
-
-    }
-
-    void addressCopy(){
-
-    }
 
     //[public | private ] [static] data_type setRating (input parameters) {
     //  The body of the method

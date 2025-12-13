@@ -28,13 +28,21 @@ Always ensure that your helper methods are bulk-safe to handle multiple records 
 */
 public with sharing class AccountHelper extends TriggerHandler {
     
+    public override void beforeInsert() {
+        setTypeProspect(Trigger.new);
+        addressCopy(Trigger.new);
+        setRating(Trigger.new);
+    }
+    public override void afterInsert() {
+        createDefaultContact(Trigger.new);
+    }
 
     /*
     * setTypeProspect
     * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.
     * Trigger should only fire on insert.
     */
-    public void setTypeProspect(List<SObject> objects){
+    private void setTypeProspect(List<SObject> objects){
 
         Schema.SObjectType objType = objects.getSObjectType();
         if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
@@ -51,7 +59,7 @@ public with sharing class AccountHelper extends TriggerHandler {
     * When an account is inserted copy the shipping address to the billing address.
     * Trigger should only fire on insert.
     */
-    public void addressCopy(List<SObject> objects){
+    private void addressCopy(List<SObject> objects){
 
         Schema.SObjectType objType = objects.getSObjectType();
         if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
@@ -74,7 +82,7 @@ public with sharing class AccountHelper extends TriggerHandler {
     * When an account is inserted set the rating to 'Hot' if the Phone, Website, and Fax is not empty.
     * Trigger should only fire on insert.
     */
-    public void setRating(List<SObject> objects){
+    private void setRating(List<SObject> objects){
 
         Schema.SObjectType objType = objects.getSObjectType();
         if (objType == Schema.Account.SObjectType) { // Check if it's an Account    SObjectType
@@ -95,7 +103,7 @@ public with sharing class AccountHelper extends TriggerHandler {
     * Email = 'default@email.com'
     * Trigger should only fire on insert.
     */    
-    public void createDefaultContact(List<SObject> objects){
+    private void createDefaultContact(List<SObject> objects){
 
         Schema.SObjectType objType = objects.getSObjectType();
         if (objType == Schema.Account.SObjectType) {  
@@ -111,16 +119,7 @@ public with sharing class AccountHelper extends TriggerHandler {
             insert contacts; 
         }
         
-        }
+    }
 
-    public override void beforeInsert() {
-        // Implement logic to be executed before inserting Account records
-        setTypeProspect(Trigger.new);
-        addressCopy(Trigger.new);
-        setRating(Trigger.new);
-    }
-    public override void afterInsert() {
-        createDefaultContact(Trigger.new);
-    }
 
 }
