@@ -47,7 +47,6 @@ public with sharing class OpportunityHelper extends TriggerHandler {
 
     public override void beforeDelete() {
             // Prevent deletion of closed Opportunities
-             // Set default Type for new Opportunities
              Schema.SObjectType objType = Trigger.old.getSObjectType();
              if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
              List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
@@ -65,15 +64,17 @@ public with sharing class OpportunityHelper extends TriggerHandler {
             Schema.SObjectType objType = Trigger.new.getSObjectType();
             if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
             List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
-           for (Opportunity opp : opps){
+            List<Task> tasksToInsert = new List<Task>();
+            for (Opportunity opp : opps){
                 Task tsk = new Task();
                 tsk.Subject = 'Call Primary Contact';
                 tsk.WhatId = opp.Id;
                 tsk.WhoId = opp.Primary_Contact__c;
                 tsk.OwnerId = opp.OwnerId;
                 tsk.ActivityDate = Date.today().addDays(3);
-                insert tsk;                    
+                tasksToInsert.add(tsk);                    
             }
+            insert tasksToInsert;
         }
     }
     public override void afterUpdate() {/*
