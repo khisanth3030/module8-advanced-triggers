@@ -26,31 +26,10 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
 
     public override void afterDelete() {
-        Schema.SObjectType objType = Trigger.old.getSObjectType();
-        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-        List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
-
-            notifyOwnersOpportunityDeleted(opps);
-
-               /*
-    * Opportunity Trigger
-    * When an opportunity is deleted prevent the deletion of a closed won opportunity if the account industry is 'Banking'.
-    * Trigger should only fire on delete.
-    */
+        notifyOwnersOpportunityDeleted(Trigger.old);
+        preventClosedOpportunityDeletionForBankingAccounts(Trigger.old);           
+    }
     
-        //Account related to the opportunities 
-        Map<Id, Account> accounts = new Map<Id, Account>([SELECT Id, Industry FROM Account WHERE Id IN (SELECT AccountId FROM Opportunity WHERE Id IN :opps)]);
-        for(Opportunity opp : opps){
-            if(opp.StageName == 'Closed Won'){
-                if(accounts.get(opp.AccountId).Industry == 'Banking'){
-                    opp.addError('Cannot delete a closed won opportunity for a banking account');
-                }
-            }
-        }
-    }
-
-        
-    }
     public override void afterUndelete() {
         Schema.SObjectType objType = Trigger.old.getSObjectType();
         if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
@@ -193,27 +172,55 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
         }
     }
 
+
+    /*
+    * Opportunity Trigger
+    * When an opportunity is deleted prevent the deletion of a closed won opportunity if the account industry is 'Banking'.
+    * Trigger should only fire on delete.
+    */
+    private void preventClosedOpportunityDeletionForBankingAccounts(List<SObject> objectsOld){
+        Schema.SObjectType objType = objectsOld.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
+
+            //Account related to the opportunities 
+            Map<Id, Account> accounts = new Map<Id, Account>([SELECT Id, Industry FROM Account WHERE Id IN (SELECT AccountId FROM Opportunity WHERE Id IN :opps)]);
+            for(Opportunity opp : opps){
+                if(opp.StageName == 'Closed Won'){
+                    if(accounts.get(opp.AccountId).Industry == 'Banking'){
+                        opp.addError('Cannot delete a closed won opportunity for a banking account');
+                    }
+                }
+            }
+        }    
+    }    
+
     /*
     notifyOwnersOpportunityDeleted:
     - Sends an email notification to the owner of the Opportunity when it gets deleted.
     - Uses Salesforce's Messaging.SingleEmailMessage to send the email.
     */
-    private static void notifyOwnersOpportunityDeleted(List<Opportunity> opps) {
-        List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
-        for (Opportunity opp : opps){
-            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-            String[] toAddresses = new String[] {[SELECT Id, Email FROM User WHERE Id = :opp.OwnerId].Email};
-            mail.setToAddresses(toAddresses);
-            mail.setSubject('Opportunity Deleted : ' + opp.Name);
-            mail.setPlainTextBody('Your Opportunity: ' + opp.Name +' has been deleted.');
-            mails.add(mail);
-        }        
+    private static void notifyOwnersOpportunityDeleted(List<SObject> objectsOld) {
+        Schema.SObjectType objType = objectsOld.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
+
+            List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
+            for (Opportunity opp : opps){
+                Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+                String[] toAddresses = new String[] {[SELECT Id, Email FROM User WHERE Id = :opp.OwnerId].Email};
+                mail.setToAddresses(toAddresses);
+                mail.setSubject('Opportunity Deleted : ' + opp.Name);
+                mail.setPlainTextBody('Your Opportunity: ' + opp.Name +' has been deleted.');
+                mails.add(mail);
+            }        
         
-        try {
-            Messaging.sendEmail(mails);
-        } catch (Exception e){
-            System.debug('Exception: ' + e.getMessage());
-        }
+            try {
+                Messaging.sendEmail(mails);
+            } catch (Exception e){
+                System.debug('Exception: ' + e.getMessage());
+            }
+        }        
     }
 
     /*
