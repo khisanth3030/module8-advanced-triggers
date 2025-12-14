@@ -31,12 +31,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
     
     public override void afterUndelete() {
-        Schema.SObjectType objType = Trigger.old.getSObjectType();
-        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-            List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
-            Map<Id, Opportunity> objects = new Map<Id, Opportunity>(opps);
-            assignPrimaryContact(objects);
-        }    
+        assignPrimaryContact(Trigger.new, Trigger.old);         
     }
 
 
@@ -213,8 +208,7 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
                 mail.setSubject('Opportunity Deleted : ' + opp.Name);
                 mail.setPlainTextBody('Your Opportunity: ' + opp.Name +' has been deleted.');
                 mails.add(mail);
-            }        
-        
+            }                
             try {
                 Messaging.sendEmail(mails);
             } catch (Exception e){
@@ -228,16 +222,21 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
     - Assigns a primary contact with the title of 'VP Sales' to undeleted Opportunities.
     - Only updates the Opportunities that don't already have a primary contact.
     */
-    private static void assignPrimaryContact(Map<Id,Opportunity> oppNewMap) {        
-        Map<Id, Opportunity> oppMap = new Map<Id, Opportunity>();
-        for (Opportunity opp : oppNewMap.values()){            
-            Contact primaryContact = [SELECT Id, AccountId FROM Contact WHERE Title = 'VP Sales' AND AccountId = :opp.AccountId LIMIT 1];
-            if (opp.Primary_Contact__c == null){
-                Opportunity oppToUpdate = new Opportunity(Id = opp.Id);
-                oppToUpdate.Primary_Contact__c = primaryContact.Id;
-                oppMap.put(opp.Id, oppToUpdate);
+    private static void assignPrimaryContact(List<SObject> objectsNew, List<SObject> objectsOld) {     
+        Schema.SObjectType objType = objectsOld.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
+            Map<Id, Opportunity> oppNewMap = new Map<Id, Opportunity>(opps);   
+            Map<Id, Opportunity> oppMap = new Map<Id, Opportunity>();
+            for (Opportunity opp : oppNewMap.values()){            
+                Contact primaryContact = [SELECT Id, AccountId FROM Contact WHERE Title = 'VP Sales' AND AccountId = :opp.AccountId LIMIT 1];
+                if (opp.Primary_Contact__c == null){
+                    Opportunity oppToUpdate = new Opportunity(Id = opp.Id);
+                    oppToUpdate.Primary_Contact__c = primaryContact.Id;
+                    oppMap.put(opp.Id, oppToUpdate);
+                }
             }
-        }
         update oppMap.values();
+        }
     }
 }
