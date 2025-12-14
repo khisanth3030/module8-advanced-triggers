@@ -10,25 +10,13 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
 
     public override void beforeUpdate() {
+        validateAmount(Trigger.new);
     /*
-    * Opportunity Trigger
-    * When an opportunity is updated validate that the amount is greater than 5000.
-    * Trigger should only fire on update.
-    */
-    Schema.SObjectType objType = Trigger.new.getSObjectType();
-    if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-        List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
-        for(Opportunity opp : opps){
-            if(opp.Amount < 5000){
-                opp.addError('Opportunity amount must be greater than 5000');
-            }
-        }
-            /*
     * Opportunity Trigger
     * When an opportunity is updated set the primary contact on the opportunity to the contact with the title of 'CEO'.
     * Trigger should only fire on update.
     */
-    
+    /*
         //Get contacts related to the opportunity account
         Set<Id> accountIds = new Set<Id>();
         for(Opportunity opp : opps){
@@ -50,10 +38,10 @@ public with sharing class OpportunityHelper extends TriggerHandler {
                     opp.Primary_Contact__c = accountIdToContact.get(opp.AccountId).Id;
                 }
             }
-        }
+        }*/
     }    
 
-    }
+    
 
 
        
@@ -172,9 +160,25 @@ public with sharing class OpportunityHelper extends TriggerHandler {
                 if (opp.Type == null){
                     opp.Type = 'New Customer';
                 }        
-             }  
-            } 
+            }  
         } 
+    } 
+    /*
+    * Opportunity Trigger
+    * When an opportunity is updated validate that the amount is greater than 5000.
+    * Trigger should only fire on update.
+    */
+    private void validateAmount(List<SObject> objectsNew){
+    Schema.SObjectType objType = objectsNew.getSObjectType();
+    if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+        List<Opportunity> opps = (List<Opportunity>)objectsNew; // Cast the whole list
+        for(Opportunity opp : opps){
+            if(opp.Amount < 5000){
+                opp.addError('Opportunity amount must be greater than 5000');
+            }
+        }
+    }
+    }
 
     /*
     notifyOwnersOpportunityDeleted:
