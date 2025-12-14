@@ -19,23 +19,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
 
     public override void afterInsert() {
-            
-            // Create a new Task for newly inserted Opportunities
-            Schema.SObjectType objType = Trigger.new.getSObjectType();
-            if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-            List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
-            List<Task> tasksToInsert = new List<Task>();
-            for (Opportunity opp : opps){
-                Task tsk = new Task();
-                tsk.Subject = 'Call Primary Contact';
-                tsk.WhatId = opp.Id;
-                tsk.WhoId = opp.Primary_Contact__c;
-                tsk.OwnerId = opp.OwnerId;
-                tsk.ActivityDate = Date.today().addDays(3);
-                tasksToInsert.add(tsk);                    
-            }
-            insert tasksToInsert;
-        }
+        createTaskForNewOpportunities(Trigger.new);
     }
     public override void afterUpdate() {
         //this.setMaxLoopCount(1);
@@ -184,7 +168,25 @@ public with sharing class OpportunityHelper extends TriggerHandler {
            }
        }
     }
-
+    // Create a new Task for newly inserted Opportunities
+    private void createTaskForNewOpportunities( List<SObject> objectsNew){
+                
+            Schema.SObjectType objType = objectsNew.getSObjectType();
+            if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+                List<Opportunity> opps = (List<Opportunity>)objectsNew; // Cast the whole list
+                List<Task> tasksToInsert = new List<Task>();
+                for (Opportunity opp : opps){
+                    Task tsk = new Task();
+                    tsk.Subject = 'Call Primary Contact';
+                    tsk.WhatId = opp.Id;
+                    tsk.WhoId = opp.Primary_Contact__c;
+                    tsk.OwnerId = opp.OwnerId;
+                    tsk.ActivityDate = Date.today().addDays(3);
+                    tasksToInsert.add(tsk);                    
+                }
+                insert tasksToInsert;
+            }
+        }
 
     /*
     notifyOwnersOpportunityDeleted:
