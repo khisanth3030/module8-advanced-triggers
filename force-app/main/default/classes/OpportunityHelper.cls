@@ -60,6 +60,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
 
     public override void afterInsert() {
+            
             // Create a new Task for newly inserted Opportunities
             Schema.SObjectType objType = Trigger.new.getSObjectType();
             if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
@@ -77,20 +78,36 @@ public with sharing class OpportunityHelper extends TriggerHandler {
             insert tasksToInsert;
         }
     }
-    public override void afterUpdate() {/*
+    public override void afterUpdate() {
+        //this.setMaxLoopCount(1);
             // Append Stage changes in Opportunity Description
-            Schema.SObjectType objType = Trigger.new.getSObjectType();
-            if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-            List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
-           for (Opportunity opp : opps){
-                for (Opportunity oldOpp : Trigger.old){
-                    if (opp.StageName != null){
-                        opp.Description += '\n Stage Change:' + opp.StageName + ':' + DateTime.now().format();
-                    }
-                }                
+            Schema.SObjectType objTypeNew = Trigger.new.getSObjectType();
+            Schema.SObjectType objTypeOld = Trigger.old.getSObjectType();
+            if (objTypeNew == Schema.Opportunity.SObjectType && 
+                objTypeOld == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> oppNs = (List<Opportunity>)Trigger.new; // Cast the whole list
+            List<Opportunity> oppOs = (List<Opportunity>)Trigger.old; // Cast the whole list
+            List<Opportunity> oppsToUpdate = new List<Opportunity>();
+            Map<Id, Opportunity> oppOMap = new Map<Id, Opportunity>(oppOs);
+
+            String currentDateTime = DateTime.now().format();
+            for (Opportunity opp : oppNs) {
+                if (opp.StageName != null && opp.StageName != oppOMap.get(opp.Id).StageName) {
+                    Opportunity oppToUpdate = new Opportunity(Id = opp.Id);
+                    oppToUpdate.Description += '\n  Stage Change:' + opp.StageName + ':' + currentDateTime;
+                    oppsToUpdate.add(oppToUpdate);
+                }
             }
-            update Trigger.new;
-        }*/
+            if (oppsToUpdate.size() > 0){
+                System.debug('Number of Opportunities updated: ' + oppsToUpdate.size());
+                if (Schema.sObjectType.Opportunity.isUpdateable())
+                try{update oppsToUpdate;} catch (Exception e){
+                    System.debug('Exception: ' + e.getMessage());
+                throw e;}    else {
+                    System.debug('Insufficient permissions to update Opportunity records.');
+                }         
+            }
+        }
     }
     public override void afterDelete() {
         //notifyOwnersOpportunityDeleted(objects);
