@@ -43,7 +43,24 @@ public with sharing class OpportunityHelper extends TriggerHandler {
             }  
     }
 
-    public override void beforeUpdate() {}    
+    public override void beforeUpdate() {
+    /*
+    * Opportunity Trigger
+    * When an opportunity is updated validate that the amount is greater than 5000.
+    * Trigger should only fire on update.
+    */
+    Schema.SObjectType objType = Trigger.new.getSObjectType();
+    if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+        List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
+        for(Opportunity opp : opps){
+            if(opp.Amount < 5000){
+                opp.addError('Opportunity amount must be greater than 5000');
+            }
+        }
+    }
+
+
+    }    
 
     public override void beforeDelete() {
             // Prevent deletion of closed Opportunities
@@ -110,10 +127,38 @@ public with sharing class OpportunityHelper extends TriggerHandler {
         }
     }
     public override void afterDelete() {
-        //notifyOwnersOpportunityDeleted(objects);
+        Schema.SObjectType objType = Trigger.old.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+        List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
+
+            notifyOwnersOpportunityDeleted(opps);
+
+               /*
+    * Opportunity Trigger
+    * When an opportunity is deleted prevent the deletion of a closed won opportunity if the account industry is 'Banking'.
+    * Trigger should only fire on delete.
+    */
+    
+        //Account related to the opportunities 
+        Map<Id, Account> accounts = new Map<Id, Account>([SELECT Id, Industry FROM Account WHERE Id IN (SELECT AccountId FROM Opportunity WHERE Id IN :opps)]);
+        for(Opportunity opp : opps){
+            if(opp.StageName == 'Closed Won'){
+                if(accounts.get(opp.AccountId).Industry == 'Banking'){
+                    opp.addError('Cannot delete a closed won opportunity for a banking account');
+                }
+            }
+        }
+    }
+
+        
     }
     public override void afterUndelete() {
-        //assignPrimaryContact(objects);
+        Schema.SObjectType objType = Trigger.old.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
+            Map<Id, Opportunity> objects = new Map<Id, Opportunity>(opps);
+            assignPrimaryContact(objects);
+        }    
     }
 
 
