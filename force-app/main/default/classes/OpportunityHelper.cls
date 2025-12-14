@@ -11,21 +11,11 @@ public with sharing class OpportunityHelper extends TriggerHandler {
 
     public override void beforeUpdate() {
         validateAmount(Trigger.new);
-        //setPrimaryContactToCEO(Trigger.new);
+        setPrimaryContactToCEO(Trigger.new);
     }    
 
     public override void beforeDelete() {
-            // Prevent deletion of closed Opportunities
-             Schema.SObjectType objType = Trigger.old.getSObjectType();
-             if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-             List<Opportunity> opps = (List<Opportunity>)Trigger.old; // Cast the whole list
-             
-            for (Opportunity oldOpp : opps){
-                if (oldOpp.IsClosed){
-                    oldOpp.addError('Cannot delete closed opportunity');
-                }
-            }
-        }
+        preventClosedOpportunityDeletion(Trigger.old);
     }
 
     public override void afterInsert() {
@@ -180,6 +170,21 @@ public with sharing class OpportunityHelper extends TriggerHandler {
             }
         }
 }
+
+// Prevent deletion of closed Opportunities
+    private void preventClosedOpportunityDeletion(List<SObject> objectsOld){
+            Schema.SObjectType objType = objectsOld.getSObjectType();
+            if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
+            
+           for (Opportunity oldOpp : opps){
+               if (oldOpp.IsClosed){
+                   oldOpp.addError('Cannot delete closed opportunity');
+               }
+           }
+       }
+    }
+
 
     /*
     notifyOwnersOpportunityDeleted:
