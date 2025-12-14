@@ -11,40 +11,8 @@ public with sharing class OpportunityHelper extends TriggerHandler {
 
     public override void beforeUpdate() {
         validateAmount(Trigger.new);
-    /*
-    * Opportunity Trigger
-    * When an opportunity is updated set the primary contact on the opportunity to the contact with the title of 'CEO'.
-    * Trigger should only fire on update.
-    */
-    /*
-        //Get contacts related to the opportunity account
-        Set<Id> accountIds = new Set<Id>();
-        for(Opportunity opp : opps){
-            accountIds.add(opp.AccountId);
-        }
-        
-        Map<Id, Contact> contacts = new Map<Id, Contact>([SELECT Id, FirstName, AccountId FROM Contact WHERE AccountId IN :accountIds AND Title = 'CEO' ORDER BY FirstName ASC]);
-        Map<Id, Contact> accountIdToContact = new Map<Id, Contact>();
-
-        for (Contact cont : contacts.values()) {
-            if (!accountIdToContact.containsKey(cont.AccountId)) {
-                accountIdToContact.put(cont.AccountId, cont);
-            }
-        }
-
-        for(Opportunity opp : opps){
-            if(opp.Primary_Contact__c == null){
-                if (accountIdToContact.containsKey(opp.AccountId)){
-                    opp.Primary_Contact__c = accountIdToContact.get(opp.AccountId).Id;
-                }
-            }
-        }*/
+        //setPrimaryContactToCEO(Trigger.new);
     }    
-
-    
-
-
-       
 
     public override void beforeDelete() {
             // Prevent deletion of closed Opportunities
@@ -146,9 +114,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
 
 
-    //[public | private ] [static] data_type setRating (input parameters) {
-    //  The body of the method
-    //}
+
 
     // Set default Type for new Opportunities
 
@@ -179,6 +145,41 @@ public with sharing class OpportunityHelper extends TriggerHandler {
         }
     }
     }
+
+    /*
+    * Opportunity Trigger
+    * When an opportunity is updated set the primary contact on the opportunity to the contact with the title of 'CEO'.
+    * Trigger should only fire on update.
+    */
+    private void setPrimaryContactToCEO(List<SObject> objectsNew){
+        Schema.SObjectType objType = objectsNew.getSObjectType();
+        if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+            List<Opportunity> opps = (List<Opportunity>)objectsNew; // Cast the whole list
+            
+            //Get contacts related to the opportunity account
+            Set<Id> accountIds = new Set<Id>();
+            for(Opportunity opp : opps){
+                accountIds.add(opp.AccountId);
+            }
+            
+            Map<Id, Contact> contacts = new Map<Id, Contact>([SELECT Id, FirstName, AccountId FROM Contact WHERE AccountId IN :accountIds AND Title = 'CEO' ORDER BY FirstName ASC]);
+            Map<Id, Contact> accountIdToContact = new Map<Id, Contact>();
+
+            for (Contact cont : contacts.values()) {
+                if (!accountIdToContact.containsKey(cont.AccountId)) {
+                    accountIdToContact.put(cont.AccountId, cont);
+                }
+            }
+
+            for(Opportunity opp : opps){
+                if(opp.Primary_Contact__c == null){
+                    if (accountIdToContact.containsKey(opp.AccountId)){
+                        opp.Primary_Contact__c = accountIdToContact.get(opp.AccountId).Id;
+                    }
+                }
+            }
+        }
+}
 
     /*
     notifyOwnersOpportunityDeleted:
