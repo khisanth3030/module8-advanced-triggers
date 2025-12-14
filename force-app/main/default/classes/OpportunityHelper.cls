@@ -4,28 +4,9 @@ OpportunityHelper Overview
 
 */
 public with sharing class OpportunityHelper extends TriggerHandler {
-
-    private List<Opportunity> newOpps;
-    private List<Opportunity> oldOpps;
-    private Map<Id, Opportunity> oldOppMap;
-
-    public OpportunityHelper() {/*
-        newOpps = (List<Opportunity>)Trigger.new;
-        oldOpps = (List<Opportunity>)Trigger.old;
-        oldOppMap = new Map<Id, Opportunity>(oldOpps);*/
-    }
-   
+  
     public override void beforeInsert() { 
-             // Set default Type for new Opportunities
-             Schema.SObjectType objType = Trigger.new.getSObjectType();
-             if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-             List<Opportunity> opps = (List<Opportunity>)Trigger.new; // Cast the whole list
-             for(Opportunity opp : opps) {
-                if (opp.Type == null){
-                    opp.Type = 'New Customer';
-                }        
-             }  
-            }  
+        defaultType(Trigger.new);
     }
 
     public override void beforeUpdate() {
@@ -181,9 +162,20 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     //  The body of the method
     //}
 
-    //[public | private ] [static] data_type defaultContact (input parameters) {
-    //  The body of the method
-    //}
+    // Set default Type for new Opportunities
+
+     private void defaultType(List<SObject> objectsNew){
+             Schema.SObjectType objType = objectsNew.getSObjectType();
+             if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
+             List<Opportunity> opps = (List<Opportunity>)objectsNew; // Cast the whole list
+             for(Opportunity opp : opps) {
+                if (opp.Type == null){
+                    opp.Type = 'New Customer';
+                }        
+             }  
+            } 
+        } 
+
     /*
     notifyOwnersOpportunityDeleted:
     - Sends an email notification to the owner of the Opportunity when it gets deleted.
