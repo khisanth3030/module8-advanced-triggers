@@ -31,7 +31,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
     }
     
     public override void afterUndelete() {
-        assignPrimaryContact(Trigger.new, Trigger.old);         
+        assignPrimaryContact(Trigger.new);         
     }
 
     // Set default Type for new Opportunities
@@ -229,29 +229,13 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
     - Assigns a primary contact with the title of 'VP Sales' to undeleted Opportunities.
     - Only updates the Opportunities that don't already have a primary contact.
     */
-    private static void assignPrimaryContact(List<SObject> objectsNew, List<SObject> objectsOld) {     
-        Schema.SObjectType objType = objectsOld.getSObjectType();
+    private static void assignPrimaryContact(List<SObject> objectsNew) {     
+        Schema.SObjectType objType = objectsNew.getSObjectType();
         if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
-            List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
+            List<Opportunity> opps = (List<Opportunity>)objectsNew; // Cast the whole list
             Map<Id, Opportunity> oppNewMap = new Map<Id, Opportunity>(opps);   
             Map<Id, Opportunity> oppMap = new Map<Id, Opportunity>();
-
-            Set<Id> accountIds = new Set<Id>();
-                for (Opportunity opp : opps) {
-                    accountIds.add(opp.AccountId);
-                }
-
-            Map<Id, Contact> primaryContacts = new Map<Id, Contact>();
-            if (Schema.sObjectType.Contact.fields.AccountId.isAccessible()) {
-                for (Contact contact : [SELECT Id, AccountId FROM Contact
-                    WHERE Title = 'VP Sales' AND AccountId IN :accountIds]) {
-                    if (!primaryContacts.containsKey(contact.AccountId)) {
-                        primaryContacts.put(contact.AccountId, contact);
-                    }
-                }
-            } else {
-                System.debug('Insufficient permissions to access Contact records.');
-            }
+            Map<Id,Contact> primaryContacts = getPrimaryContacts(opps);
 
             for (Opportunity opp : oppNewMap.values()){            
                 Contact primaryContact = primaryContacts.get(opp.AccountId);
@@ -274,5 +258,25 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
             System.debug('Insufficient permissions to update Opportunity records.');
         }
     }
+}
+
+private static Map<Id,Contact> getPrimaryContacts(List<Opportunity> opps) {
+    Set<Id> accountIds = new Set<Id>();
+    for (Opportunity opp : opps) {
+        accountIds.add(opp.AccountId);
+    }
+
+    Map<Id, Contact> primaryContacts = new Map<Id, Contact>();
+    if (Schema.sObjectType.Contact.fields.AccountId.isAccessible()) {
+        for (Contact contact : [SELECT Id, AccountId FROM Contact
+            WHERE Title = 'VP Sales' AND AccountId IN :accountIds]) {
+            if (!primaryContacts.containsKey(contact.AccountId)) {
+                primaryContacts.put(contact.AccountId, contact);
+            }
+        }
+    } else {
+        System.debug('Insufficient permissions to access Contact records.');
+    }
+    return primaryContacts;
 }
 }
