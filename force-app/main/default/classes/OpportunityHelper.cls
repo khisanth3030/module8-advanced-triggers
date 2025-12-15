@@ -34,11 +34,7 @@ public with sharing class OpportunityHelper extends TriggerHandler {
         assignPrimaryContact(Trigger.new, Trigger.old);         
     }
 
-
-
-
     // Set default Type for new Opportunities
-
      private void defaultType(List<SObject> objectsNew){
              Schema.SObjectType objType = objectsNew.getSObjectType();
              if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
@@ -157,15 +153,15 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
             }
             if (oppsToUpdate.size() > 0){
                 System.debug('Number of Opportunities updated: ' + oppsToUpdate.size());
-                if (Schema.sObjectType.Opportunity.isUpdateable())
-                try{update oppsToUpdate;} catch (Exception e){
-                    System.debug('Exception: ' + e.getMessage());
-                throw e;}    else {
-                    System.debug('Insufficient permissions to update Opportunity records.');
-                }         
+                if (Schema.sObjectType.Opportunity.isUpdateable()){
+                    try{update oppsToUpdate;} catch (Exception e){
+                        System.debug('Exception: ' + e.getMessage());
+                        throw e;}    
+                    } else {System.debug('Insufficient permissions to update Opportunity records.');} 
+                }        
             }
         }
-    }
+    
 
 
     /*
@@ -239,15 +235,44 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
             List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
             Map<Id, Opportunity> oppNewMap = new Map<Id, Opportunity>(opps);   
             Map<Id, Opportunity> oppMap = new Map<Id, Opportunity>();
+
+            Set<Id> accountIds = new Set<Id>();
+                for (Opportunity opp : opps) {
+                    accountIds.add(opp.AccountId);
+                }
+
+            Map<Id, Contact> primaryContacts = new Map<Id, Contact>();
+            if (Schema.sObjectType.Contact.fields.AccountId.isAccessible()) {
+                for (Contact contact : [SELECT Id, AccountId FROM Contact
+                    WHERE Title = 'VP Sales' AND AccountId IN :accountIds]) {
+                    if (!primaryContacts.containsKey(contact.AccountId)) {
+                        primaryContacts.put(contact.AccountId, contact);
+                    }
+                }
+            } else {
+                System.debug('Insufficient permissions to access Contact records.');
+            }
+
             for (Opportunity opp : oppNewMap.values()){            
-                Contact primaryContact = [SELECT Id, AccountId FROM Contact WHERE Title = 'VP Sales' AND AccountId = :opp.AccountId LIMIT 1];
+                Contact primaryContact = primaryContacts.get(opp.AccountId);
                 if (opp.Primary_Contact__c == null){
                     Opportunity oppToUpdate = new Opportunity(Id = opp.Id);
                     oppToUpdate.Primary_Contact__c = primaryContact.Id;
                     oppMap.put(opp.Id, oppToUpdate);
                 }
             }
-        update oppMap.values();
+        if (!oppMap.isEmpty() && Schema.sObjectType.Opportunity.isUpdateable()) {
+            try { 
+                update oppMap.values();
+            } catch (Exception e) {
+                System.debug('Exception: ' + e.getMessage());
+                throw e;
+            }
+        } else if (oppMap.isEmpty()) {
+            System.debug('No Opportunities to update.');
+        } else {
+            System.debug('Insufficient permissions to update Opportunity records.');
         }
     }
+}
 }
