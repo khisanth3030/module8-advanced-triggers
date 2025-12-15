@@ -188,8 +188,9 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
                 }
             }
         }    
-    }    
+    } 
 
+     
     /*
     notifyOwnersOpportunityDeleted:
     - Sends an email notification to the owner of the Opportunity when it gets deleted.
@@ -200,10 +201,20 @@ private void appendStageChangesInDescription(List<SObject> newObjects, List<SObj
         if (objType == Schema.Opportunity.SObjectType) { // Check if it's an Opportunity SObjectType
             List<Opportunity> opps = (List<Opportunity>)objectsOld; // Cast the whole list
 
+            Set<Id> ownerIds = new Set<Id>();
+            for (Opportunity opp : opps) {
+                ownerIds.add(opp.OwnerId);
+            }
+        
+            Map<Id, String> ownerEmails = new Map<Id, String>();        
+                for (User user : [SELECT Id, Email FROM User WHERE Id IN :ownerIds]) {
+                    ownerEmails.put(user.Id, user.Email);
+                }        
+    
             List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
             for (Opportunity opp : opps){
                 Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-                String[] toAddresses = new String[] {[SELECT Id, Email FROM User WHERE Id = :opp.OwnerId].Email};
+                String[] toAddresses = ownerEmails.values();
                 mail.setToAddresses(toAddresses);
                 mail.setSubject('Opportunity Deleted : ' + opp.Name);
                 mail.setPlainTextBody('Your Opportunity: ' + opp.Name +' has been deleted.');
